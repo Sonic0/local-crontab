@@ -20,6 +20,8 @@ class Converter:
         self.cron = Cron(cron_string)
         self.local_list_crontab = self.cron.to_list()
         self.timezone = tz.gettz(timezone)
+        if not self.timezone:
+            raise ValueError('Invalid Timezone')
         self.cron_year = year if bool(year) else datetime.now(tz=self.timezone).year
 
     def to_utc_crons(self):

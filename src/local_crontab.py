@@ -7,8 +7,14 @@ from calendar import monthrange
 
 
 class Converter:
-    """
-    aaa
+    """Creates an instance of Converter.
+
+    Converter objects is a converter from local to UTC date time.
+
+    Attributes:
+        cron_string (str): The cron string to convert.
+        timezone (str): The timezone as string. eg -> 'Europe/Rome'
+        year (int): The year crontab will be applied in
     """
     def __init__(self, cron_string, timezone: Optional[str] = None, year: Optional[int] = None):
         self.cron = Cron(cron_string)
@@ -28,10 +34,10 @@ class Converter:
         utc_list_crontabs = self._group_hours(utc_list_crontabs)
         # Group days together
         utc_list_crontabs = self._group_days(utc_list_crontabs)
+        # Convert a day-full month in *
+        utc_list_crontabs = self._range_to_full_month(utc_list_crontabs)
         # Group months together by hour / minute & days
         utc_list_crontabs = self._group_months(utc_list_crontabs)
-        # Convert a day full range month in *
-        utc_list_crontabs = self._range_to_full_month(utc_list_crontabs)
 
         cron_strings = []
         for cron_list in utc_list_crontabs:
@@ -58,29 +64,19 @@ class Converter:
                         [utc_date.day], [utc_date.month], self.local_list_crontab[4]])
         return utc_list_crontabs
 
+    """Returns a modified list with the character '*' as month in case of the month is day-full.
+    The Cron-Converter read a full month only if it has 31 days.
+
+    Returns:
+        acc (list of ints): the resulting cron list readable by Cron-Converter Object.
+    """
     def _range_to_full_month(self, utc_list_crontabs):
         acc = []
         for element in utc_list_crontabs:
-            if len(element[3]) > 1:
-                full_month = False
-                for element_month in element[3]:
-                    last_month_day = monthrange(self.cron_year, element_month)[1]
-                    if element[2][-1] == last_month_day and element[2][0] == 1:
-                        full_month = True
-                    else:
-                        full_month = False
-                if full_month:
-                    element[2] = [day for day in range(1, 32)]
-                    acc.append(element)
-                else:
-                    acc.append(element)
-            else:
-                last_month_day = monthrange(self.cron_year, element[3][0])[1]
-                if element[2][-1] == last_month_day and element[2][0] == 1:
-                    element[2] = [day for day in range(1, 32)]
-                    acc.append(element)
-                else:
-                    acc.append(element)
+            if len(element[2]) == monthrange(self.cron_year, element[3][0])[1]:
+                element[2] = [day for day in range(1, 32)]
+
+            acc.append(element)
         return acc
 
     # Group days together by minute, day and month.
@@ -125,11 +121,11 @@ class Converter:
                 acc.append(element)
         return acc
 
-    # combine start & end of year if possible. #TODO probably not necessary
-    @staticmethod
-    def _combine_month(utc_list_crontabs):
-        if len(utc_list_crontabs) > 1 and \
-                utc_list_crontabs[0][0] == utc_list_crontabs[-1][0] and \
-                utc_list_crontabs[0][1] == utc_list_crontabs[-1][1]:
-            utc_list_crontabs[0][3].append(utc_list_crontabs.pop()[3][0])
-        return utc_list_crontabs
+    # # combine start & end of year if possible.
+    # @staticmethod
+    # def _combine_month(utc_list_crontabs):
+    #     if len(utc_list_crontabs) > 1 and \
+    #             utc_list_crontabs[0][0] == utc_list_crontabs[-1][0] and \
+    #             utc_list_crontabs[0][1] == utc_list_crontabs[-1][1]:
+    #         utc_list_crontabs[0][3].append(utc_list_crontabs.pop()[3][0])
+    #     return utc_list_crontabs

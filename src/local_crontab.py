@@ -1,7 +1,7 @@
 from typing import Optional, Literal
 
 from cron_converter import Cron
-from datetime import datetime
+from datetime import datetime, timezone
 from dateutil import tz
 from calendar import monthrange
 
@@ -24,12 +24,14 @@ class Converter:
             return self.cron.to_string()
 
         utc_list_crontabs = self._day_cron_list()
+        # Group hours together
+        utc_list_crontabs = self._group_hours(utc_list_crontabs)
         # Group days together
         utc_list_crontabs = self._group_days(utc_list_crontabs)
-        # Convert a day full range month in *
-        utc_list_crontabs = self._range_to_full_month(utc_list_crontabs)
         # Group months together by hour / minute & days
         utc_list_crontabs = self._group_months(utc_list_crontabs)
+        # Convert a day full range month in *
+        utc_list_crontabs = self._range_to_full_month(utc_list_crontabs)
 
         cron_strings = []
         for cron_list in utc_list_crontabs:
@@ -43,21 +45,17 @@ class Converter:
         utc_list_crontabs = list()
         for month in self.local_list_crontab[3]:
             for day in self.local_list_crontab[2]:
-                try:
-                    local_date = datetime(self.cron_year, month, day, 12, 0, tzinfo=self.timezone)
-                except ValueError:
-                    continue
-                try:
-                    tz.datetime_exists(local_date)
-                except ValueError:
-                    raise ValueError("Timezone not correct")
-                # Create one Cron list for each day
-                offset_hours = int((local_date.utcoffset().seconds / 60) / 60)
-                offset_minutes = int((local_date.utcoffset().seconds / 60) % 60)
-                utc_list_crontabs.append([
-                    [(minute + offset_minutes + 60) % 60 for minute in self.local_list_crontab[0]],
-                    [(hour - offset_hours + 24) % 24 for hour in self.local_list_crontab[1]],
-                    [day], [month], self.local_list_crontab[4]])
+                for hour in self.local_list_crontab[1]:
+                    try:
+                        local_date = datetime(self.cron_year, month, day, hour, 0, tzinfo=self.timezone)
+                    except ValueError:
+                        continue  # skip days that not exist (eg: 30 February)
+                    utc_date = (local_date - local_date.utcoffset()).replace(tzinfo=timezone.utc)
+                    # Create one Cron list for each hour
+                    utc_list_crontabs.append([
+                        [minute for minute in self.local_list_crontab[0]],
+                        [utc_date.hour],
+                        [utc_date.day], [utc_date.month], self.local_list_crontab[4]])
         return utc_list_crontabs
 
     def _range_to_full_month(self, utc_list_crontabs):
@@ -85,7 +83,21 @@ class Converter:
                     acc.append(element)
         return acc
 
-    # Group days together by month & hour / minute.
+    # Group days together by minute, day and month.
+    @staticmethod
+    def _group_hours(utc_list_crontabs):
+        acc = []
+        for element in utc_list_crontabs:
+            if len(acc) > 0 and \
+                    acc[-1][0] == element[0] and \
+                    acc[-1][2] == element[2] and \
+                    acc[-1][3] == element[3]:
+                acc[-1][1].append(element[1][0])
+            else:
+                acc.append(element)
+        return acc
+
+    # Group days together by hour, minute and month.
     @staticmethod
     def _group_days(utc_list_crontabs):
         acc = []
@@ -99,7 +111,7 @@ class Converter:
                 acc.append(element)
         return acc
 
-    # Group months together by hour / minute & days
+    # Group months together by minute, days and hours
     @staticmethod
     def _group_months(utc_list_crontabs):
         acc = []
@@ -112,6 +124,7 @@ class Converter:
             else:
                 acc.append(element)
         return acc
+
     # combine start & end of year if possible. #TODO probably not necessary
     @staticmethod
     def _combine_month(utc_list_crontabs):

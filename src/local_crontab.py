@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Optional, List
 
 from cron_converter import Cron
 from datetime import datetime, timezone
@@ -24,13 +24,18 @@ class Converter:
             raise ValueError('Invalid Timezone')
         self.cron_year = year if bool(year) else datetime.now(tz=self.timezone).year
 
-    def to_utc_crons(self):
+    """The main function to convert the cron string to a list of UTC cron strings. 
+
+    Returns:
+        cron_strings (list of str): the resulting cron list readable by all systems.
+    """
+    def to_utc_crons(self) -> List[str]:
         # If the hour part of Cron is the entire range of hours (*) is useless proceed
         cron_hour_part = self.cron.parts[1]
         if cron_hour_part.is_full():
-            print(self.cron.to_string())
-            return self.cron.to_string()
+            return [self.cron.to_string()]
 
+        # Create the nested list with every single day belonging to the cron
         utc_list_crontabs = self._day_cron_list()
         # Group hours together
         utc_list_crontabs = self._group_hours(utc_list_crontabs)
@@ -43,13 +48,21 @@ class Converter:
 
         cron_strings = []
         for cron_list in utc_list_crontabs:
-            # Override cron object and use it to convert each crontab list
-            self.cron.from_list(cron_list)
-            cron_strings.append(self.cron.to_string())
+            cron = Cron()
+            cron.from_list(cron_list)
+            cron_strings.append(cron.to_string())
 
         return cron_strings
 
-    def _day_cron_list(self):
+    """Returns a nested list struct in which each element represents every single day in cron list format, 
+    readable by Cron-Converter Object.
+    Sometimes days included in the cron range do not exist in the real life for every month(example: February 30),
+    so these days will be discarded.
+    
+    Returns:
+        acc (list of ints): nested list made up of cron lists readable by Cron-Converter Object.
+    """
+    def _day_cron_list(self) -> List[List[List[int]]]:
         utc_list_crontabs = list()
         for month in self.local_list_crontab[3]:
             for day in self.local_list_crontab[2]:
@@ -70,9 +83,9 @@ class Converter:
     The Cron-Converter read a full month only if it has 31 days.
 
     Returns:
-        acc (list of ints): the resulting cron list readable by Cron-Converter Object.
+        acc (nested list of ints): modified nested list made up of cron lists readable by Cron-Converter Object.
     """
-    def _range_to_full_month(self, utc_list_crontabs):
+    def _range_to_full_month(self, utc_list_crontabs: List[List[List[int]]]) -> List[List[List[int]]]:
         acc = []
         for element in utc_list_crontabs:
             if len(element[2]) == monthrange(self.cron_year, element[3][0])[1]:
@@ -81,9 +94,13 @@ class Converter:
             acc.append(element)
         return acc
 
-    # Group days together by minute, day and month.
+    """Group days together by minute, day and month.
+
+    Returns:
+        acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+    """
     @staticmethod
-    def _group_hours(utc_list_crontabs):
+    def _group_hours(utc_list_crontabs) -> List[List[List[int]]]:
         acc = []
         for element in utc_list_crontabs:
             if len(acc) > 0 and \
@@ -95,9 +112,13 @@ class Converter:
                 acc.append(element)
         return acc
 
-    # Group days together by hour, minute and month.
+    """Group days together by hour, minute and month.
+
+    Returns:
+        acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+    """
     @staticmethod
-    def _group_days(utc_list_crontabs):
+    def _group_days(utc_list_crontabs) -> List[List[List[int]]]:
         acc = []
         for element in utc_list_crontabs:
             if len(acc) > 0 and \
@@ -109,9 +130,13 @@ class Converter:
                 acc.append(element)
         return acc
 
-    # Group months together by minute, days and hours
+    """Group months together by minute, days and hours
+
+    Returns:
+        acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+    """
     @staticmethod
-    def _group_months(utc_list_crontabs):
+    def _group_months(utc_list_crontabs) -> List[List[List[int]]]:
         acc = []
         for element in utc_list_crontabs:
             if len(acc) > 0 and \

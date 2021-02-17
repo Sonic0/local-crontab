@@ -16,12 +16,15 @@ class Converter:
         timezone (str): The timezone as string. eg -> 'Europe/Rome'
         year (int): The year crontab will be applied in
     """
-    def __init__(self, cron_string, timezone: Optional[str] = None, year: Optional[int] = None):
+    def __init__(self, cron_string, timezone_str: Optional[str] = None, year: Optional[int] = None):
         self.cron = Cron(cron_string)
         self.local_list_crontab = self.cron.to_list()
-        self.timezone = tz.gettz(timezone)
-        if not self.timezone:
-            raise ValueError('Invalid Timezone')
+        if not timezone_str:
+            self.timezone = tz.tzlocal()  # Use current Local Timezone if no input timezone
+        elif tz.gettz(timezone_str):
+            self.timezone = tz.gettz(timezone_str)
+        else:
+            raise ValueError("Incorrect Timezone string")
         self.cron_year = year if bool(year) else datetime.now(tz=self.timezone).year
 
     """The main function to convert the cron string to a list of UTC cron strings. 

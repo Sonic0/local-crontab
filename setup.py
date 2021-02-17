@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-
 setup(
     name='local-crontab',
     version='0.0.1',
@@ -10,15 +9,19 @@ setup(
     author='Andrea Salvatori',
     author_email='andrea.salvatori92@gmail.com',
     url='https://github.com/Sonic0/local-crontab',
+    # package_dir={'': 'src'},
     packages=find_packages(where='src', exclude=['tests*', '*.tests*']),
-    keywords='cron, timezone, utc, dst',
-    install_requires='cron-converter',
+    keywords='cron, timezone, utc',
+    install_requires=['cron-converter', 'click'],
     include_package_data=True,
     extras_require={
             'test': ['unittest'],
         },
+    entry_points={
+            'console_scripts': ['local-crontab=local_crontab.command_line:main'],
+        },
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'License :: OSI Approved :: MIT License',
@@ -26,5 +29,6 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.6',
 )
+

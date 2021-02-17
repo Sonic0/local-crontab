@@ -20,21 +20,26 @@ Options:
   --t, --timezone TZ    The timezone to use. Defaults to system timezone
   --help                Show this help message and exit.
   --version             Show program's version number and exit.
- 
-$ local-crontab '0 10 * * *' --timezone America/New_York
-0 15 * 1-2,12 *
-0 15 1-10 3 *
-0 14 11-31 3 *
+
+# year 2021
+$ local-crontab --timezone America/New_York '0 10 * * *'
+0 15 * 1-2 *
+0 15 1-13 3 *
+0 14 14-31 3 *
 0 14 * 4-10 *
-0 14 1-3 11 *
-0 15 4-31 11 *
-$ npx local-crontab  '0 10 * * *' --timezone America/Denver
-0 17 * 1-2,12 *
-0 17 1-10 3 *
-0 16 11-31 3 *
+0 14 1-6 11 *
+0 15 7-30 11 *
+0 15 * 12 *
+
+# year 2021
+$ local-crontab --timezone America/Denver '0 10 * * *'
+0 17 * 1-2 *
+0 17 1-13 3 *
+0 16 14-31 3 *
 0 16 * 4-10 *
-0 16 1-3 11 *
-0 17 4-31 11 *
+0 16 1-6 11 *
+0 17 7-30 11 *
+0 17 * 12 *
 ```
 
 ## Use as a library

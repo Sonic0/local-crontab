@@ -27,4 +27,4 @@ jobs:
 
       - name: Run tests with pytest
         run: |
-          python3 -m unittest discover -s src/local_crontab/tests
+          python3 -m unittest discover -s tests/

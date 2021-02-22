@@ -5,7 +5,7 @@ except ImportError:
     import importlib_metadata as metadata
 import click
 
-from local_crontab import Converter
+from local_crontab.local_crontab import Converter
 
 
 @click.command()
@@ -18,7 +18,8 @@ def main(crontab, timezone,):
     """
     if not timezone:
         click.secho("Timezone not provided, it will be used your local timezone", fg="yellow")
-    converted_crontabs = Converter(crontab, timezone).to_utc_crons()
+    converter = Converter(crontab, timezone)
+    converted_crontabs = converter.to_utc_crons()
     for crontab in converted_crontabs:
         click.secho(message=crontab, nl=True, bold=True, fg='cyan')
 

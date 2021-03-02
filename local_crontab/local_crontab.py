@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from dateutil import tz
 from calendar import monthrange
 
+CronConverterNestedLists = List[List[List[int]]]
+
 
 class Converter:
     """Creates an instance of Converter.
@@ -27,12 +29,11 @@ class Converter:
             raise ValueError("Incorrect Timezone string")
         self.cron_year = year if bool(year) else datetime.now(tz=self.timezone).year
 
-    """The main function to convert the cron string to a list of UTC cron strings. 
-
-    Returns:
-        cron_strings (list of str): the resulting cron list readable by all systems.
-    """
     def to_utc_crons(self) -> List[str]:
+        """The main function to convert the cron string to a list of UTC cron strings.
+
+        :return: cron_strings (list of str): the resulting cron list readable by all systems.
+        """
         # If the hour part of Cron is the entire range of hours (*) is useless proceed
         cron_hour_part = self.cron.parts[1]
         if cron_hour_part.is_full():
@@ -57,15 +58,14 @@ class Converter:
 
         return cron_strings
 
-    """Returns a nested list struct in which each element represents every single day in cron list format, 
-    readable by Cron-Converter Object.
-    Sometimes days included in the cron range do not exist in the real life for every month(example: February 30),
-    so these days will be discarded.
-    
-    Returns:
-        acc (list of ints): nested list made up of cron lists readable by Cron-Converter Object.
-    """
-    def _day_cron_list(self) -> List[List[List[int]]]:
+    def _day_cron_list(self) -> CronConverterNestedLists:
+        """Returns a nested list struct in which each element represents every single day in cron list format,
+        readable by Cron-Converter Object.
+        Sometimes days included in the cron range do not exist in the real life for every month(example: February 30),
+        so these days will be discarded.
+
+        :return: acc (list of ints): nested list made up of cron lists readable by Cron-Converter Object.
+        """
         utc_list_crontabs = list()
         for month in self.local_list_crontab[3]:
             for day in self.local_list_crontab[2]:
@@ -82,13 +82,12 @@ class Converter:
                         [utc_date.day], [utc_date.month], self.local_list_crontab[4]])
         return utc_list_crontabs
 
-    """Returns a modified list with the character '*' as month in case of the month is day-full.
-    The Cron-Converter read a full month only if it has 31 days.
+    def _range_to_full_month(self, utc_list_crontabs: CronConverterNestedLists) -> CronConverterNestedLists:
+        """Returns a modified list with the character '*' as month in case of the month is day-full.
+        The Cron-Converter read a full month only if it has 31 days.
 
-    Returns:
-        acc (nested list of ints): modified nested list made up of cron lists readable by Cron-Converter Object.
-    """
-    def _range_to_full_month(self, utc_list_crontabs: List[List[List[int]]]) -> List[List[List[int]]]:
+        :return: acc (nested list of ints): modified nested list made up of cron lists readable by Cron-Converter Object.
+        """
         acc = []
         for element in utc_list_crontabs:
             if len(element[2]) == monthrange(self.cron_year, element[3][0])[1]:
@@ -97,13 +96,13 @@ class Converter:
             acc.append(element)
         return acc
 
-    """Group days together by minute, day and month.
-
-    Returns:
-        acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
-    """
     @staticmethod
-    def _group_hours(utc_list_crontabs) -> List[List[List[int]]]:
+    def _group_hours(utc_list_crontabs: CronConverterNestedLists) -> CronConverterNestedLists:
+        """Group hours together by minute, day and month.
+
+        :param utc_list_crontabs: Nested list of crontabs not grouped.
+        :return: acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+        """
         acc = []
         for element in utc_list_crontabs:
             if len(acc) > 0 and \
@@ -115,13 +114,13 @@ class Converter:
                 acc.append(element)
         return acc
 
-    """Group days together by hour, minute and month.
-
-    Returns:
-        acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
-    """
     @staticmethod
-    def _group_days(utc_list_crontabs) -> List[List[List[int]]]:
+    def _group_days(utc_list_crontabs: CronConverterNestedLists) -> CronConverterNestedLists:
+        """Group days together by hour, minute and month.
+
+        :param utc_list_crontabs: Nested list of crontabs previously grouped in hours.
+        :return: acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+        """
         acc = []
         for element in utc_list_crontabs:
             if len(acc) > 0 and \
@@ -133,13 +132,13 @@ class Converter:
                 acc.append(element)
         return acc
 
-    """Group months together by minute, days and hours
-
-    Returns:
-        acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
-    """
     @staticmethod
-    def _group_months(utc_list_crontabs) -> List[List[List[int]]]:
+    def _group_months(utc_list_crontabs: CronConverterNestedLists) -> CronConverterNestedLists:
+        """Group months together by minute, days and hours
+
+        :param utc_list_crontabs: Nested list of crontabs previously grouped in days.
+        :return: acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+        """
         acc = []
         for element in utc_list_crontabs:
             if len(acc) > 0 and \
@@ -151,9 +150,14 @@ class Converter:
                 acc.append(element)
         return acc
 
-    # # combine start & end of year if possible.
+    # TODO next release
     # @staticmethod
-    # def _combine_month(utc_list_crontabs):
+    # def _combine_month(utc_list_crontabs: CronConverterNestedLists) -> CronConverterNestedLists:
+    #     """Combine start & end of year if possible.
+    #
+    #     :param utc_list_crontabs: Nested list of crontabs previously grouped in months.
+    #     :return: acc (nested list of ints): filtered nested list made up of cron lists readable by Cron-Converter Object.
+    #     """
     #     if len(utc_list_crontabs) > 1 and \
     #             utc_list_crontabs[0][0] == utc_list_crontabs[-1][0] and \
     #             utc_list_crontabs[0][1] == utc_list_crontabs[-1][1]:

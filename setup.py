@@ -11,7 +11,7 @@ setup(
     url='https://github.com/Sonic0/local-crontab',
     packages=find_packages(where='.', exclude=['tests*', '*.tests*']),
     keywords='cron, timezone, utc',
-    install_requires=['cron-converter', 'click'],
+    install_requires=['cron-converter', 'click', 'python-dateutil'],
     include_package_data=True,
     extras_require={
             'test': ['unittest'],

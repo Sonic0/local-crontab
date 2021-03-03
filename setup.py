@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
+
 setup(
     name='local-crontab',
-    version='0.0.1',
+    version='0.1.0',
     license='MIT License',
     description='Convert local crontabs to UTC crontabs',
     long_description=open('README.md').read(),
@@ -28,5 +29,5 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

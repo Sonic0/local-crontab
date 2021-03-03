@@ -8,6 +8,11 @@ from calendar import monthrange
 CronConverterNestedLists = List[List[List[int]]]
 
 
+class WrongTimezoneError(Exception):
+    """Error Should be raised when an unexpected timezone is detected as input"""
+    pass
+
+
 class Converter:
     """Creates an instance of Converter.
 
@@ -26,7 +31,7 @@ class Converter:
         elif tz.gettz(timezone_str):
             self.timezone = tz.gettz(timezone_str)
         else:
-            raise ValueError("Incorrect Timezone string")
+            raise WrongTimezoneError("Incorrect Timezone string")
         self.cron_year = year if bool(year) else datetime.now(tz=self.timezone).year
 
     def to_utc_crons(self) -> List[str]:

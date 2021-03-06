@@ -1,6 +1,6 @@
 import unittest
 
-from local_crontab.local_crontab import Converter
+from local_crontab.converter import Converter
 
 from fixtures.invalid_crons import invalid_crons_to_convert
 

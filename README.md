@@ -44,14 +44,15 @@ $ local-crontab --timezone America/Denver '0 10 * * *'
 
 ## Use as a library
 Install with `pip install local-crontab`, then:
+
 ```python
 from local_crontab import Converter
 Converter('0 10 * * *', 'America/New_York').to_utc_crons()
 # returns
-[ '0 15 * 1-2,12 *',                                               
-  '0 15 1-10 3 *',                                                 
-  '0 14 11-31 3 *',                                                
-  '0 14 * 4-10 *',                                                 
-  '0 14 1-3 11 *',                                                 
-  '0 15 4-31 11 *' ]                                               
+['0 15 * 1-2,12 *',
+ '0 15 1-10 3 *',
+ '0 14 11-31 3 *',
+ '0 14 * 4-10 *',
+ '0 14 1-3 11 *',
+ '0 15 4-31 11 *']                                               
 ```

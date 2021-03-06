@@ -1,4 +1,4 @@
-from local_crontab.local_crontab import WrongTimezoneError
+from local_crontab.converter import WrongTimezoneError
 
 invalid_crons_to_convert = [
     {

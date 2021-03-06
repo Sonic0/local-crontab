@@ -5,7 +5,7 @@ except ImportError:
     import importlib_metadata as metadata
 import click
 
-from local_crontab.local_crontab import Converter
+from local_crontab.converter import Converter
 
 
 @click.command()

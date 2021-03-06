@@ -43,7 +43,7 @@ $ local-crontab --timezone America/Denver '0 10 * * *'
 ```
 
 ## Use as a library
-Install with `pip install local-crontab`, then:
+Install with `pip install local-crontab`:
 
 ```python
 from local_crontab import Converter

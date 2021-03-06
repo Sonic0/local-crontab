@@ -1,23 +1,19 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
-with open('README.md') as f:
+with open('README.md', encoding='utf-8') as f:
     readme = f.read()
-
-with open('LICENSE') as f:
-    license = f.read()
 
 setup(
     name='local-crontab',
     version='0.2.0',
-    license=license,
+    license='MIT',
     description='Convert local crontabs to UTC crontabs',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Andrea Salvatori',
     author_email='andrea.salvatori92@gmail.com',
     url='https://github.com/Sonic0/local-crontab',
-    packages=find_packages(exclude=['tests*', '*.tests*']),
-    py_modules=['local_crontab'],
+    packages=['local_crontab'],
     keywords='cron, timezone, utc',
     install_requires=['cron-converter', 'click', 'python-dateutil'],
     include_package_data=True,

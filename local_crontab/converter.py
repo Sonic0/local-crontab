@@ -23,7 +23,7 @@ class Converter:
         timezone (str): The timezone as string. eg -> 'Europe/Rome'
         year (int): The year crontab will be applied in
     """
-    def __init__(self, cron_string, timezone_str: Optional[str] = None, year: Optional[int] = None):
+    def __init__(self, cron_string: str, timezone_str: Optional[str] = None, year: Optional[int] = None):
         self.cron = Cron(cron_string)
         self.local_list_crontab = self.cron.to_list()
         if not timezone_str:

@@ -24,8 +24,8 @@ class Converter:
         year (int): The year crontab will be applied in
     """
     def __init__(self, cron_string: str, timezone_str: Optional[str] = None, year: Optional[int] = None):
-        self.cron = Cron(cron_string)
-        self.local_list_crontab = self.cron.to_list()
+        self.localized_cron = Cron(cron_string)
+        self.localized_cron_list = self.localized_cron.to_list()
         if not timezone_str:
             self.timezone = tz.tzlocal()  # Use current Local Timezone if no input timezone
         elif tz.gettz(timezone_str):
@@ -34,15 +34,66 @@ class Converter:
             raise WrongTimezoneError("Incorrect Timezone string")
         self.cron_year = year if bool(year) else datetime.now(tz=self.timezone).year
 
+    def to_utc_cron(self) -> str:
+        """Function to convert a localized cron string to UTC cron string.
+        This function converts only hour and day part, however the result in not reliable in some cases due to not handled DST.
+
+        :return: cron_string (str): the resulting cron readable by all systems.
+        """
+        # If the hour part of Cron is the entire range of hours (*) is useless proceed
+        if self.localized_cron.parts[1].is_full():
+            return self.localized_cron.to_string()
+        # Get offset from utc in hours
+        local_offset = self.timezone.utcoffset(datetime.now(self.timezone))
+        local_offset_hours = int(local_offset.total_seconds() / 3600)  # offset in second / second in an hour
+
+        utc_cron_list = self.localized_cron_list
+        day_shift = (False, 0)
+        hour_shifted_count = 0
+        # Hours shift
+        hour_range = self.localized_cron.parts[1].possible_values()  # Range of hours that a Cron hour object Part can assume
+        cron_hours_part_utc = [hour - local_offset_hours for hour in self.localized_cron_list[1]]  # Shift hour based of offset from UTC
+        for idx, hour in enumerate(cron_hours_part_utc):
+            if hour < hour_range[0]:
+                # Hour < 0 (ex: -2, -1) as intended in the previous day, so shift them to a real hour (ex: 22, 23)
+                day_shift = (True, -1)
+                hour += len(hour_range)  # Convert negative hour to real (ex: -2 + 24 = 22, -1 + 24 = 23)
+                cron_hours_part_utc.pop(idx)
+                cron_hours_part_utc.insert(idx, hour)
+                hour_shifted_count += 1
+            elif hour > hour_range[-1]:
+                # Hour < 0 (ex: -2, -1) as intended in the previous day, so shift them to a real hour (ex: 22, 23)
+                day_shift = (True, 1)
+                hour -= len(hour_range)  # Convert not existing hour to real (ex: 25 - 24 = 1, 26 - 24 = 2)
+                cron_hours_part_utc.pop(idx)
+                cron_hours_part_utc.insert(idx, hour)
+                hour_shifted_count += 1
+        utc_cron_list[1] = cron_hours_part_utc
+
+        # Day shift
+        # if it is necessary a day shift and the original days Cron Part is not full(*)
+        if day_shift[0] and not self.localized_cron.parts[2].is_full():
+            # All hours shifted to the a next or previous day
+            if day_shift[0] and hour_shifted_count == len(cron_hours_part_utc):
+                utc_cron_list[2] = [day + day_shift[1] for day in self.localized_cron_list[2]]
+            # Only one or more hours shifted to the a next or previous day
+            elif day_shift[0] and hour_shifted_count != len(cron_hours_part_utc):
+                raise ValueError("Operation cross days not supported. Sorry! (╥﹏╥)")
+
+        utc_cron = Cron()
+        utc_cron.from_list(utc_cron_list)
+
+        return utc_cron.to_string()
+
     def to_utc_crons(self) -> List[str]:
         """The main function to convert the cron string to a list of UTC cron strings.
 
         :return: cron_strings (list of str): the resulting cron list readable by all systems.
         """
         # If the hour part of Cron is the entire range of hours (*) is useless proceed
-        cron_hour_part = self.cron.parts[1]
+        cron_hour_part = self.localized_cron.parts[1]
         if cron_hour_part.is_full():
-            return [self.cron.to_string()]
+            return [self.localized_cron.to_string()]
 
         # Create the nested list with every single day belonging to the cron
         utc_list_crontabs = self._day_cron_list()
@@ -72,9 +123,9 @@ class Converter:
         :return: acc (list of ints): nested list made up of cron lists readable by Cron-Converter Object.
         """
         utc_list_crontabs = list()
-        for month in self.local_list_crontab[3]:
-            for day in self.local_list_crontab[2]:
-                for hour in self.local_list_crontab[1]:
+        for month in self.localized_cron_list[3]:
+            for day in self.localized_cron_list[2]:
+                for hour in self.localized_cron_list[1]:
                     try:
                         local_date = datetime(self.cron_year, month, day, hour, 0, tzinfo=self.timezone)
                     except ValueError:
@@ -82,9 +133,9 @@ class Converter:
                     utc_date = (local_date - local_date.utcoffset()).replace(tzinfo=timezone.utc)
                     # Create one Cron list for each hour
                     utc_list_crontabs.append([
-                        [minute for minute in self.local_list_crontab[0]],
+                        [minute for minute in self.localized_cron_list[0]],
                         [utc_date.hour],
-                        [utc_date.day], [utc_date.month], self.local_list_crontab[4]])
+                        [utc_date.day], [utc_date.month], self.localized_cron_list[4]])
         return utc_list_crontabs
 
     def _range_to_full_month(self, utc_list_crontabs: CronConverterNestedLists) -> CronConverterNestedLists:

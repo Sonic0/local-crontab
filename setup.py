@@ -5,7 +5,7 @@ with open('README.md', encoding='utf-8') as f:
 
 setup(
     name='local-crontab',
-    version='0.2.0',
+    version='0.3.0',
     license='MIT',
     description='Convert local crontabs to UTC crontabs',
     long_description=readme,
